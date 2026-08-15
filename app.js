@@ -134,7 +134,12 @@ function saveState(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-// ── View helpers (stubs) ────────────────────────────────────────────────────
+const PROFILE_META = {
+  seth:  { name: 'Seth',  avatar: '🦖', headerClass: 'theme-seth',  checkColor: '#0ea5e9', bigText: true },
+  april: { name: 'April', avatar: '🎨', headerClass: 'theme-april', checkColor: '#a855f7', bigText: false }
+};
+
+// ── View helpers ────────────────────────────────────────────────────────────
 
 function showView(viewId) {
   document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
@@ -147,8 +152,58 @@ function showDashboard(profileKey) {
   renderPhases(profileKey);
 }
 
-function renderHeader(profileKey) {}
-function renderPhases(profileKey) {}
+function renderHeader(profileKey) {
+  const meta    = PROFILE_META[profileKey];
+  const profile = App.state.profiles[profileKey];
+  const header  = document.getElementById('dashboard-header');
+
+  header.classList.remove('theme-seth', 'theme-april');
+  header.classList.add(meta.headerClass);
+
+  document.getElementById('header-avatar').textContent  = meta.avatar;
+  document.getElementById('header-name').textContent    = meta.name + "'s Day";
+  document.getElementById('header-streak').textContent  = profile.streak;
+  document.getElementById('header-stars').textContent   = profile.lifetimeStars;
+  document.title = meta.name + "'s Daily Blueprint ⭐";
+}
+
+function renderPhases(profileKey) {
+  const container = document.getElementById('phases-container');
+  container.innerHTML = '';
+
+  for (const phaseKey of Object.keys(TASKS)) {
+    const meta    = PHASE_META[phaseKey];
+    const section = document.createElement('div');
+    section.className = 'bg-white rounded-2xl shadow-sm overflow-hidden';
+    if (phaseKey === 'beforeBed') section.classList.add('span-full');
+    section.id = 'phase-' + phaseKey;
+
+    const header = document.createElement('button');
+    header.className = 'w-full flex items-center justify-between px-5 py-4 font-bold text-gray-700 text-lg';
+    header.innerHTML = `<span>${meta.label}</span><span class="phase-chevron transition-transform">▾</span>`;
+
+    const body = document.createElement('div');
+    body.className = 'phase-body px-4 pb-4';
+    if (phaseKey === 'beforeBed') body.classList.add('grid', 'grid-cols-1', 'ipad:grid-cols-2');
+    body.id = 'phase-body-' + phaseKey;
+
+    header.addEventListener('click', () => {
+      const isHidden = body.classList.toggle('hidden');
+      header.querySelector('.phase-chevron').style.transform = isHidden ? 'rotate(-90deg)' : '';
+    });
+
+    section.appendChild(header);
+    section.appendChild(body);
+    container.appendChild(section);
+
+    renderTaskList(phaseKey, profileKey);
+  }
+}
+
+function renderTaskList(phaseKey, profileKey) {
+  const body = document.getElementById('phase-body-' + phaseKey);
+  body.innerHTML = '<p class="text-gray-400 text-sm py-2">Tasks coming soon…</p>';
+}
 
 function bindSplashEvents() {
   document.getElementById('btn-seth').addEventListener('click', () => {

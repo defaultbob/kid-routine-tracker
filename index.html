@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Blueprint ⭐</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            seth:  { primary: '#0ea5e9', secondary: '#0d9488', accent: '#fbbf24' },
+            april: { primary: '#a855f7', secondary: '#ec4899', accent: '#f59e0b' }
+          },
+          screens: {
+            /* iPad landscape target ~1024px */
+            'ipad': '1024px'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="min-h-screen bg-gray-50 font-sans">
+
+  <!-- SPLASH SCREEN -->
+  <div id="view-splash" class="flex flex-col items-center justify-center min-h-screen p-6 gap-8">
+    <h1 class="text-4xl font-extrabold text-center text-gray-800">Daily Blueprint ⭐</h1>
+    <p class="text-lg text-gray-500">Who's checking in today?</p>
+    <div class="flex flex-col sm:flex-row gap-6 w-full max-w-md">
+      <button id="btn-seth" class="profile-card flex-1 rounded-3xl p-8 text-center shadow-lg bg-sky-100 border-4 border-sky-300 active:scale-95 transition-transform">
+        <div class="text-7xl mb-3">🦖</div>
+        <div class="text-2xl font-extrabold text-sky-700">Seth</div>
+        <div class="text-sm text-sky-500 mt-1">Age 5</div>
+      </button>
+      <button id="btn-april" class="profile-card flex-1 rounded-3xl p-8 text-center shadow-lg bg-purple-100 border-4 border-purple-300 active:scale-95 transition-transform">
+        <div class="text-7xl mb-3">🎨</div>
+        <div class="text-2xl font-extrabold text-purple-700">April</div>
+        <div class="text-sm text-purple-500 mt-1">Age 8</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="hidden min-h-screen bg-gray-50">
+
+    <!-- Sticky Header -->
+    <header id="dashboard-header" class="sticky top-0 z-10 shadow-md px-4 pt-4 pb-3 text-white">
+      <div class="max-w-5xl mx-auto">
+        <div class="flex items-center justify-between mb-1">
+          <button id="btn-switch-profile" class="text-white/80 text-sm bg-white/20 px-3 py-1 rounded-full">← Switch</button>
+          <div id="header-avatar" class="text-3xl ipad:text-4xl"></div>
+        </div>
+        <div class="flex items-end justify-between">
+          <h2 id="header-name" class="text-xl ipad:text-2xl font-extrabold"></h2>
+          <div class="flex gap-4 text-sm font-semibold">
+            <span>🔥 Streak: <span id="header-streak">0</span></span>
+            <span>⭐ Stars: <span id="header-stars">0</span></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Phases -->
+    <div class="max-w-5xl mx-auto w-full p-3 ipad:p-6 pb-16">
+      <div id="phases-container" class="grid grid-cols-1 ipad:grid-cols-2 gap-3 ipad:gap-4"></div>
+    </div>
+
+  </div>
+
+  <!-- PARENT QUESTION MODAL -->
+  <div id="modal-question" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
+      <div class="text-5xl mb-4">💬</div>
+      <h3 class="text-xl font-bold text-gray-800 mb-3">Parent's Question</h3>
+      <p id="modal-question-text" class="text-gray-600 text-lg leading-relaxed mb-6"></p>
+      <button id="btn-question-complete" class="w-full py-4 rounded-2xl text-white font-bold text-lg bg-green-500 active:scale-95 transition-transform">
+        ✅ Mark Complete
+      </button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -135,8 +135,8 @@ function saveState(state) {
 }
 
 const PROFILE_META = {
-  seth:  { name: 'Seth',  avatar: '🦖', headerClass: 'theme-seth',  checkColor: '#0ea5e9', bigText: true },
-  april: { name: 'April', avatar: '🎨', headerClass: 'theme-april', checkColor: '#a855f7', bigText: false }
+  seth:  { name: 'Seth',  avatar: '🥁', headerClass: 'theme-seth',  checkColor: '#0ea5e9', bigText: true },
+  april: { name: 'April', avatar: '🎸', headerClass: 'theme-april', checkColor: '#a855f7', bigText: false }
 };
 
 // ── View helpers ────────────────────────────────────────────────────────────

@@ -136,30 +136,19 @@ function saveState(state) {
 
 // ── View helpers (stubs) ────────────────────────────────────────────────────
 
-function showView(id) {
-  document.getElementById('view-splash').classList.add('hidden');
-  document.getElementById('view-dashboard').classList.add('hidden');
-  const el = document.getElementById('view-' + id);
-  if (el) el.classList.remove('hidden');
+function showView(viewId) {
+  document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('view-' + viewId).classList.remove('hidden');
 }
 
-function showDashboard(profile) {
-  // Stub: just show the dashboard shell with profile name
-  const meta = {
-    seth:  { name: "Seth's Day",  avatar: '🦖', theme: 'theme-seth' },
-    april: { name: "April's Day", avatar: '🎨', theme: 'theme-april' }
-  };
-  const m = meta[profile] || meta.seth;
-
-  document.getElementById('header-avatar').textContent = m.avatar;
-  document.getElementById('header-name').textContent   = m.name;
-
-  const header = document.getElementById('dashboard-header');
-  header.className = header.className.replace(/theme-\w+/g, '').trim();
-  header.classList.add('sticky', 'top-0', 'z-10', 'shadow-md', 'px-4', 'pt-4', 'pb-3', 'text-white', m.theme);
-
+function showDashboard(profileKey) {
   showView('dashboard');
+  renderHeader(profileKey);
+  renderPhases(profileKey);
 }
+
+function renderHeader(profileKey) {}
+function renderPhases(profileKey) {}
 
 function bindSplashEvents() {
   document.getElementById('btn-seth').addEventListener('click', () => {

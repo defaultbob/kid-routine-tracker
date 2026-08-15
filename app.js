@@ -295,7 +295,64 @@ function fireMiniConfetti() {
 }
 
 function checkPhaseComplete(phaseKey, profileKey) {
-  // Full implementation in Task 6
+  const profile    = App.state.profiles[profileKey];
+  const phaseTasks = profile.currentDayTasks[phaseKey];
+  const allDone    = Object.values(phaseTasks).every(Boolean);
+
+  if (!allDone) return;
+
+  // Show phase complete banner
+  const phaseBody = document.getElementById('phase-body-' + phaseKey);
+  if (!phaseBody.querySelector('.phase-complete-banner')) {
+    const banner = document.createElement('div');
+    banner.className = 'phase-complete-banner star-pop';
+    banner.textContent = '⭐ Phase Complete! ⭐';
+    phaseBody.appendChild(banner);
+  }
+
+  // Big confetti
+  confetti({
+    particleCount: 150,
+    spread: 100,
+    origin: { y: 0.5 },
+    colors: ['#fbbf24', '#f59e0b', '#0ea5e9', '#a855f7', '#ec4899']
+  });
+
+  checkDayComplete(profileKey);
+}
+
+function checkDayComplete(profileKey) {
+  const profile   = App.state.profiles[profileKey];
+  const allPhases = Object.keys(TASKS).every(
+    phase => Object.values(profile.currentDayTasks[phase]).every(Boolean)
+  );
+
+  if (!allPhases) return;
+
+  // Guard: only award once per day
+  if (profile.history[todayStr()]?.fullDayAwarded) return;
+
+  profile.streak        += 1;
+  profile.lifetimeStars += 1;
+  profile.lastActiveDate = todayStr();
+
+  if (!profile.history[todayStr()]) profile.history[todayStr()] = {};
+  profile.history[todayStr()].fullDayAwarded = true;
+  profile.history[todayStr()].beforeSchool   = true;
+  profile.history[todayStr()].afterSchool    = true;
+  profile.history[todayStr()].beforeBed      = true;
+
+  saveState(App.state);
+  renderHeader(profileKey);
+
+  // Mega celebration - dual side cannons for 3 seconds
+  const end = Date.now() + 3000;
+  const frame = () => {
+    confetti({ particleCount: 20, angle: 60,  spread: 55, origin: { x: 0 } });
+    confetti({ particleCount: 20, angle: 120, spread: 55, origin: { x: 1 } });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  };
+  frame();
 }
 
 function bindSplashEvents() {

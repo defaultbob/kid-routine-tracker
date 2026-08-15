@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Blueprint — Mock</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            seth:  { primary: '#0ea5e9', secondary: '#0d9488' },
+            april: { primary: '#a855f7', secondary: '#ec4899' }
+          },
+          screens: {
+            /* iPad landscape target ~1024px */
+            'ipad': '1024px'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes strike { from { width: 0 } to { width: 100% } }
+    @keyframes star-pop {
+      0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+      60%  { transform: scale(1.3) rotate(5deg);  opacity: 1; }
+      100% { transform: scale(1);                 opacity: 1; }
+    }
+
+    /* Completed task cross-out */
+    .task-done .task-lbl {
+      color: #9ca3af;
+      position: relative;
+    }
+    .task-done .task-lbl::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 50%;
+      height: 2px;
+      background: #9ca3af;
+      animation: strike 0.3s ease forwards;
+    }
+
+    .phase-done-banner { animation: star-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+    /* Checkbox — 48×48 min tap target */
+    input[type=checkbox] {
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    /* View routing */
+    .view { display: none; }
+    .view.active { display: flex; }
+
+    /* iPad landscape: Before Bed spans both columns */
+    @media (min-width: 1024px) {
+      #phase-grid > .span-full { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 font-sans">
+
+<!-- ═══════════════════════════════════════════
+     SPLASH
+════════════════════════════════════════════ -->
+<div id="splash" class="view active flex-col items-center justify-center min-h-screen p-6 gap-6">
+
+  <div class="text-center">
+    <div class="text-5xl mb-2">⭐</div>
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800">Daily Blueprint</h1>
+    <p class="text-gray-400 mt-1 text-sm sm:text-base">Who's checking in today?</p>
+  </div>
+
+  <!--
+    iPhone portrait  → cards side-by-side, compact horizontal layout
+    iPad landscape   → cards side-by-side, tall centered layout
+  -->
+  <div class="flex flex-row gap-4 w-full max-w-xs sm:max-w-sm ipad:max-w-lg ipad:gap-6">
+
+    <!-- Seth card -->
+    <button onclick="goTo('seth')"
+      class="flex-1 rounded-2xl ipad:rounded-3xl
+             p-4 ipad:p-10
+             text-center bg-sky-100 border-4 border-sky-300 shadow-lg
+             active:scale-95 transition-transform">
+      <div class="text-4xl ipad:text-7xl mb-1 ipad:mb-3">🦖</div>
+      <div class="text-lg ipad:text-2xl font-extrabold text-sky-700">Seth</div>
+      <div class="text-xs ipad:text-sm text-sky-500">Age 5</div>
+      <div class="mt-2 text-xs font-bold text-sky-600 bg-sky-200 rounded-full px-2 py-1">🔥 5 days</div>
+    </button>
+
+    <!-- April card -->
+    <button onclick="goTo('april')"
+      class="flex-1 rounded-2xl ipad:rounded-3xl
+             p-4 ipad:p-10
+             text-center bg-purple-100 border-4 border-purple-300 shadow-lg
+             active:scale-95 transition-transform">
+      <div class="text-4xl ipad:text-7xl mb-1 ipad:mb-3">🎨</div>
+      <div class="text-lg ipad:text-2xl font-extrabold text-purple-700">April</div>
+      <div class="text-xs ipad:text-sm text-purple-500">Age 8</div>
+      <div class="mt-2 text-xs font-bold text-purple-600 bg-purple-200 rounded-full px-2 py-1">🔥 12 days</div>
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD — SETH
+     iPhone portrait : single-column phases
+     iPad landscape  : 2-col grid (Before Bed spans full)
+════════════════════════════════════════════ -->
+<div id="seth" class="view flex-col min-h-screen bg-gray-50">
+
+  <!-- Sticky header -->
+  <header class="sticky top-0 z-10 text-white shadow-md px-4 pt-4 pb-3"
+          style="background: linear-gradient(135deg,#0ea5e9,#0d9488)">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex items-center justify-between mb-1">
+        <button onclick="goTo('splash')"
+          class="text-white/80 text-sm bg-white/20 px-3 py-1 rounded-full">← Switch</button>
+        <span class="text-3xl ipad:text-4xl">🦖</span>
+      </div>
+      <div class="flex items-end justify-between">
+        <h2 class="text-xl ipad:text-2xl font-extrabold">Seth's Day</h2>
+        <div class="flex gap-4 text-sm font-bold">
+          <span>🔥 <span id="seth-streak">5</span></span>
+          <span>⭐ <span id="seth-stars">24</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Phase grid: 1 col on iPhone, 2 col on iPad landscape -->
+  <div class="max-w-5xl mx-auto w-full p-3 ipad:p-6 pb-16">
+    <div id="phase-grid" class="grid grid-cols-1 ipad:grid-cols-2 gap-3 ipad:gap-4">
+
+      <!-- ── Before School ── -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden" id="phase-bs">
+        <button onclick="togglePhase('phase-bs')"
+          class="w-full flex items-center justify-between px-4 py-3 ipad:px-5 ipad:py-4 font-bold text-gray-700 text-base ipad:text-lg">
+          <span>🌅 Before School</span>
+          <span class="chevron transition-transform duration-200">▾</span>
+        </button>
+        <div class="phase-body px-3 ipad:px-4 pb-3 ipad:pb-4 flex flex-col" id="phase-bs-body">
+          <!-- 1 task pre-done for demo -->
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="bs1" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🍳</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700 truncate">Breakfast</span>
+            </label>
+            <input type="checkbox" id="bs1" checked onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="bs2" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">👕</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Get Dressed</span>
+            </label>
+            <input type="checkbox" id="bs2" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="bs3" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🪥</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Brush Teeth</span>
+            </label>
+            <input type="checkbox" id="bs3" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="bs4" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🧹</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Brush Hair</span>
+            </label>
+            <input type="checkbox" id="bs4" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="bs5" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🎒</span>
+              <div class="flex flex-col min-w-0">
+                <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Pack Bag</span>
+                <span class="text-xs text-gray-400 truncate">Lunchbox, water bottle, homework</span>
+              </div>
+            </label>
+            <input type="checkbox" id="bs5" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3">
+            <label for="bs6" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">💧</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Drink Water</span>
+            </label>
+            <input type="checkbox" id="bs6" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── After School ── -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden" id="phase-as">
+        <button onclick="togglePhase('phase-as')"
+          class="w-full flex items-center justify-between px-4 py-3 ipad:px-5 ipad:py-4 font-bold text-gray-700 text-base ipad:text-lg">
+          <span>🌇 After School</span>
+          <span class="chevron transition-transform duration-200">▾</span>
+        </button>
+        <div class="phase-body px-3 ipad:px-4 pb-3 ipad:pb-4 flex flex-col" id="phase-as-body">
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="as1" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🎒</span>
+              <div class="flex flex-col min-w-0">
+                <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Unpack Bag</span>
+                <span class="text-xs text-gray-400">Water bottle, lunchbox</span>
+              </div>
+            </label>
+            <input type="checkbox" id="as1" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="as2" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🍎</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Snack</span>
+            </label>
+            <input type="checkbox" id="as2" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <!-- Modal trigger -->
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label onclick="openModal()" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">💬</span>
+              <div class="flex flex-col min-w-0">
+                <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Parent's Question</span>
+                <span class="text-xs text-sky-400">Tap to reveal →</span>
+              </div>
+            </label>
+            <input type="checkbox" id="as3" onclick="event.preventDefault(); openModal()" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="as4" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">✏️</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Homework</span>
+            </label>
+            <input type="checkbox" id="as4" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+            <label for="as5" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">🎹</span>
+              <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Music Practice</span>
+            </label>
+            <input type="checkbox" id="as5" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3">
+            <label for="as6" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0">
+              <span class="text-2xl ipad:text-3xl shrink-0">👟</span>
+              <div class="flex flex-col min-w-0">
+                <span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Get Ready for Activities</span>
+                <span class="text-xs text-gray-400">Soccer, dance, softball…</span>
+              </div>
+            </label>
+            <input type="checkbox" id="as6" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Before Bed  (spans both columns on iPad) ── -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden span-full" id="phase-bb">
+        <button onclick="togglePhase('phase-bb')"
+          class="w-full flex items-center justify-between px-4 py-3 ipad:px-5 ipad:py-4 font-bold text-gray-700 text-base ipad:text-lg">
+          <span>🌙 Before Bed</span>
+          <span class="chevron transition-transform duration-200" style="transform:rotate(-90deg)">▾</span>
+        </button>
+        <div class="phase-body hidden px-3 ipad:px-4 pb-3 ipad:pb-4" id="phase-bb-body">
+          <!-- On iPad landscape render 2 mini-columns inside the span-full card -->
+          <div class="grid grid-cols-1 ipad:grid-cols-2 gap-0 ipad:gap-x-6">
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+              <label for="bb1" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">🍽️</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Have Dinner</span></label>
+              <input type="checkbox" id="bb1" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+              <label for="bb2" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">🧸</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Put Toys Away</span></label>
+              <input type="checkbox" id="bb2" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+              <label for="bb3" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">🛁</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Bath</span></label>
+              <input type="checkbox" id="bb3" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+              <label for="bb4" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">💤</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Get in Pyjamas</span></label>
+              <input type="checkbox" id="bb4" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+              <label for="bb5" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">🪥</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Brush Teeth</span></label>
+              <input type="checkbox" id="bb5" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100">
+              <label for="bb6" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">🚽</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Pee</span></label>
+              <input type="checkbox" id="bb6" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100 ipad:border-b-0">
+              <label for="bb7" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">📚</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Story-time</span></label>
+              <input type="checkbox" id="bb7" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3">
+              <label for="bb8" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl ipad:text-3xl shrink-0">😴</span><span class="task-lbl font-semibold text-base ipad:text-lg text-gray-700">Go to Sleep</span></label>
+              <input type="checkbox" id="bb8" onclick="toggleTask(this)" style="accent-color:#0ea5e9">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /phase-grid -->
+  </div>
+</div><!-- /seth -->
+
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD — APRIL
+════════════════════════════════════════════ -->
+<div id="april" class="view flex-col min-h-screen bg-gray-50">
+
+  <header class="sticky top-0 z-10 text-white shadow-md px-4 pt-4 pb-3"
+          style="background: linear-gradient(135deg,#a855f7,#ec4899)">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex items-center justify-between mb-1">
+        <button onclick="goTo('splash')"
+          class="text-white/80 text-sm bg-white/20 px-3 py-1 rounded-full">← Switch</button>
+        <span class="text-3xl ipad:text-4xl">🎨</span>
+      </div>
+      <div class="flex items-end justify-between">
+        <h2 class="text-xl ipad:text-2xl font-extrabold">April's Day</h2>
+        <div class="flex gap-4 text-sm font-bold">
+          <span>🔥 12</span>
+          <span>⭐ 52</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-5xl mx-auto w-full p-3 ipad:p-6 pb-16">
+    <div class="grid grid-cols-1 ipad:grid-cols-2 gap-3 ipad:gap-4">
+
+      <!-- Before School — all complete -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden" id="apr-phase-bs">
+        <button onclick="togglePhase('apr-phase-bs')"
+          class="w-full flex items-center justify-between px-4 py-3 ipad:px-5 ipad:py-4 font-bold text-gray-700 text-base ipad:text-lg">
+          <span>🌅 Before School</span>
+          <span class="chevron transition-transform duration-200">▾</span>
+        </button>
+        <div class="phase-body px-3 ipad:px-4 pb-3 ipad:pb-4 flex flex-col" id="apr-phase-bs-body">
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bs1" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🍳</span><span class="task-lbl font-semibold text-base text-gray-700">Breakfast</span></label><input type="checkbox" id="a-bs1" checked onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bs2" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">👕</span><span class="task-lbl font-semibold text-base text-gray-700">Get Dressed</span></label><input type="checkbox" id="a-bs2" checked onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bs3" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🪥</span><span class="task-lbl font-semibold text-base text-gray-700">Brush Teeth</span></label><input type="checkbox" id="a-bs3" checked onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bs4" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🧹</span><span class="task-lbl font-semibold text-base text-gray-700">Brush Hair</span></label><input type="checkbox" id="a-bs4" checked onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bs5" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🎒</span><div class="flex flex-col min-w-0"><span class="task-lbl font-semibold text-base text-gray-700">Pack Bag</span><span class="text-xs text-gray-400">Lunchbox, water bottle, homework</span></div></label><input type="checkbox" id="a-bs5" checked onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row task-done flex items-center gap-3 py-2 ipad:py-3"><label for="a-bs6" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">💧</span><span class="task-lbl font-semibold text-base text-gray-700">Drink Water</span></label><input type="checkbox" id="a-bs6" checked onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl p-2 text-center text-white font-extrabold text-sm mt-2 phase-done-banner">⭐ Phase Complete! ⭐</div>
+        </div>
+      </div>
+
+      <!-- After School — in progress -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden" id="apr-phase-as">
+        <button onclick="togglePhase('apr-phase-as')"
+          class="w-full flex items-center justify-between px-4 py-3 ipad:px-5 ipad:py-4 font-bold text-gray-700 text-base ipad:text-lg">
+          <span>🌇 After School</span>
+          <span class="chevron transition-transform duration-200">▾</span>
+        </button>
+        <div class="phase-body px-3 ipad:px-4 pb-3 ipad:pb-4 flex flex-col" id="apr-phase-as-body">
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-as1" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🎒</span><div class="flex flex-col min-w-0"><span class="task-lbl font-semibold text-base text-gray-700">Unpack Bag</span><span class="text-xs text-gray-400">Water bottle, lunchbox</span></div></label><input type="checkbox" id="a-as1" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-as2" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🍎</span><span class="task-lbl font-semibold text-base text-gray-700">Snack</span></label><input type="checkbox" id="a-as2" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label onclick="openModal()" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">💬</span><div class="flex flex-col min-w-0"><span class="task-lbl font-semibold text-base text-gray-700">Parent's Question</span><span class="text-xs text-purple-400">Tap to reveal →</span></div></label><input type="checkbox" id="a-as3" onclick="event.preventDefault(); openModal()" style="accent-color:#a855f7"></div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-as4" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">✏️</span><span class="task-lbl font-semibold text-base text-gray-700">Homework</span></label><input type="checkbox" id="a-as4" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-as5" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🎹</span><span class="task-lbl font-semibold text-base text-gray-700">Music Practice</span></label><input type="checkbox" id="a-as5" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          <div class="task-row flex items-center gap-3 py-2 ipad:py-3"><label for="a-as6" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">👟</span><div class="flex flex-col min-w-0"><span class="task-lbl font-semibold text-base text-gray-700">Get Ready for Activities</span><span class="text-xs text-gray-400">Soccer, dance, softball…</span></div></label><input type="checkbox" id="a-as6" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+        </div>
+      </div>
+
+      <!-- Before Bed — spans full width on iPad -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden span-full" id="apr-phase-bb">
+        <button onclick="togglePhase('apr-phase-bb')"
+          class="w-full flex items-center justify-between px-4 py-3 ipad:px-5 ipad:py-4 font-bold text-gray-700 text-base ipad:text-lg">
+          <span>🌙 Before Bed</span>
+          <span class="chevron transition-transform duration-200" style="transform:rotate(-90deg)">▾</span>
+        </button>
+        <div class="phase-body hidden px-3 ipad:px-4 pb-3 ipad:pb-4" id="apr-phase-bb-body">
+          <div class="grid grid-cols-1 ipad:grid-cols-2 gap-0 ipad:gap-x-6">
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bb1" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🍽️</span><span class="task-lbl font-semibold text-base text-gray-700">Have Dinner</span></label><input type="checkbox" id="a-bb1" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bb2" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🧸</span><span class="task-lbl font-semibold text-base text-gray-700">Put Toys Away</span></label><input type="checkbox" id="a-bb2" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bb3" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🛁</span><span class="task-lbl font-semibold text-base text-gray-700">Bath</span></label><input type="checkbox" id="a-bb3" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bb4" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">💤</span><span class="task-lbl font-semibold text-base text-gray-700">Get in Pyjamas</span></label><input type="checkbox" id="a-bb4" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bb5" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🪥</span><span class="task-lbl font-semibold text-base text-gray-700">Brush Teeth</span></label><input type="checkbox" id="a-bb5" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100"><label for="a-bb6" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">🚽</span><span class="task-lbl font-semibold text-base text-gray-700">Pee</span></label><input type="checkbox" id="a-bb6" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3 border-b border-gray-100 ipad:border-b-0"><label for="a-bb7" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">📚</span><span class="task-lbl font-semibold text-base text-gray-700">Story-time</span></label><input type="checkbox" id="a-bb7" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+            <div class="task-row flex items-center gap-3 py-2 ipad:py-3"><label for="a-bb8" class="flex items-center gap-2 ipad:gap-3 flex-1 cursor-pointer min-w-0"><span class="text-2xl shrink-0">😴</span><span class="task-lbl font-semibold text-base text-gray-700">Go to Sleep</span></label><input type="checkbox" id="a-bb8" onclick="toggleTask(this)" style="accent-color:#a855f7"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /april -->
+
+
+<!-- ═══════════════════════════════════════════
+     PARENT QUESTION MODAL
+════════════════════════════════════════════ -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50"
+     onclick="if(event.target===this)closeModal()">
+  <div class="bg-white rounded-3xl p-6 ipad:p-10 max-w-sm ipad:max-w-md w-full shadow-2xl text-center">
+    <div class="text-5xl ipad:text-6xl mb-3">💬</div>
+    <h3 class="text-lg ipad:text-xl font-bold text-gray-800 mb-3">Parent's Question</h3>
+    <p id="modal-q" class="text-gray-600 text-base ipad:text-lg leading-relaxed mb-6"></p>
+    <button onclick="completeQuestion()"
+      class="w-full py-4 rounded-2xl text-white font-bold text-lg bg-green-500 active:scale-95 transition-transform">
+      ✅ Mark Complete
+    </button>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+  const QUESTIONS = [
+    "What was the funniest thing that happened today?",
+    "What game did you play at recess?",
+    "What did you learn today that surprised you?",
+    "Who made you laugh today?",
+    "What was the best part of lunch?",
+    "Did anything make you feel proud today?",
+    "What's one thing you wish you could do again tomorrow?",
+    "Did you help anyone today? How?",
+    "What was the most interesting thing your teacher said?",
+    "If today was a movie, what would it be called?"
+  ];
+
+  function goTo(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function togglePhase(phaseId) {
+    const body    = document.getElementById(phaseId + '-body');
+    const chevron = document.querySelector('#' + phaseId + ' .chevron');
+    const hidden  = body.classList.toggle('hidden');
+    chevron.style.transform = hidden ? 'rotate(-90deg)' : '';
+  }
+
+  function toggleTask(chk) {
+    const row = chk.closest('.task-row');
+    if (chk.checked) {
+      row.classList.add('task-done');
+      confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
+    } else {
+      row.classList.remove('task-done');
+    }
+  }
+
+  function openModal() {
+    const q = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+    document.getElementById('modal-q').textContent = q;
+    document.getElementById('modal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+  }
+
+  function completeQuestion() {
+    // Best-effort: mark whichever question checkbox is visible
+    ['as3', 'a-as3'].forEach(id => {
+      const chk = document.getElementById(id);
+      if (chk && !chk.checked) {
+        chk.checked = true;
+        chk.closest('.task-row').classList.add('task-done');
+      }
+    });
+    closeModal();
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
+  }
+</script>
+</body>
+</html>

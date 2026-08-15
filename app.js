@@ -201,8 +201,101 @@ function renderPhases(profileKey) {
 }
 
 function renderTaskList(phaseKey, profileKey) {
-  const body = document.getElementById('phase-body-' + phaseKey);
-  body.innerHTML = '<p class="text-gray-400 text-sm py-2">Tasks coming soon…</p>';
+  const body    = document.getElementById('phase-body-' + phaseKey);
+  const tasks   = TASKS[phaseKey];
+  const profile = App.state.profiles[profileKey];
+  const meta    = PROFILE_META[profileKey];
+
+  body.innerHTML = '';
+
+  for (const task of tasks) {
+    const done = profile.currentDayTasks[phaseKey][task.id];
+
+    const row = document.createElement('div');
+    row.className = 'task-row flex items-center gap-3 py-3 border-b border-gray-100 last:border-0' + (done ? ' task-complete' : '');
+    row.id = 'task-row-' + phaseKey + '-' + task.id;
+
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-3 flex-1 cursor-pointer select-none';
+    label.htmlFor = 'chk-' + phaseKey + '-' + task.id;
+
+    const emoji = document.createElement('span');
+    emoji.className = meta.bigText ? 'text-3xl' : 'text-2xl';
+    emoji.textContent = task.emoji;
+
+    const textWrap = document.createElement('div');
+    textWrap.className = 'flex flex-col';
+
+    const taskLabel = document.createElement('span');
+    taskLabel.className = 'task-label font-semibold ' + (meta.bigText ? 'text-lg' : 'text-base') + ' text-gray-700';
+    taskLabel.textContent = task.label;
+
+    textWrap.appendChild(taskLabel);
+
+    if (task.detail) {
+      const detail = document.createElement('span');
+      detail.className = 'text-xs text-gray-400';
+      detail.textContent = task.detail;
+      textWrap.appendChild(detail);
+    }
+
+    label.appendChild(emoji);
+    label.appendChild(textWrap);
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.id   = 'chk-' + phaseKey + '-' + task.id;
+    chk.className = 'task-checkbox';
+    chk.checked   = done;
+    chk.style.accentColor = meta.checkColor;
+
+    if (task.isModal) {
+      chk.addEventListener('change', (e) => {
+        e.preventDefault();
+        chk.checked = done; // revert — modal handles actual state
+        openQuestionModal(phaseKey, task.id, profileKey);
+      });
+    } else {
+      chk.addEventListener('change', () => {
+        toggleTask(phaseKey, task.id, profileKey);
+      });
+    }
+
+    row.appendChild(label);
+    row.appendChild(chk);
+    body.appendChild(row);
+  }
+}
+
+function toggleTask(phaseKey, taskId, profileKey) {
+  const profile = App.state.profiles[profileKey];
+  const newVal  = !profile.currentDayTasks[phaseKey][taskId];
+  profile.currentDayTasks[phaseKey][taskId] = newVal;
+  saveState(App.state);
+
+  const row = document.getElementById('task-row-' + phaseKey + '-' + taskId);
+  if (row) {
+    if (newVal) {
+      row.classList.add('task-complete');
+    } else {
+      row.classList.remove('task-complete');
+    }
+  }
+
+  if (newVal) {
+    fireMiniConfetti();
+    checkPhaseComplete(phaseKey, profileKey);
+  }
+
+  renderHeader(profileKey);
+}
+
+function fireMiniConfetti() {
+  confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+}
+
+function checkPhaseComplete(phaseKey, profileKey) {
+  // Full implementation in Task 6
 }
 
 function bindSplashEvents() {

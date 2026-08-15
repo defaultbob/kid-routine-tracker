@@ -250,8 +250,7 @@ function renderTaskList(phaseKey, profileKey) {
     chk.style.accentColor = meta.checkColor;
 
     if (task.isModal) {
-      chk.addEventListener('change', (e) => {
-        e.preventDefault();
+      chk.addEventListener('change', () => {
         chk.checked = done; // revert — modal handles actual state
         openQuestionModal(phaseKey, task.id, profileKey);
       });
@@ -285,13 +284,21 @@ function toggleTask(phaseKey, taskId, profileKey) {
   if (newVal) {
     fireMiniConfetti();
     checkPhaseComplete(phaseKey, profileKey);
+  } else {
+    const phaseBody = document.getElementById('phase-body-' + phaseKey);
+    if (phaseBody) {
+      const banner = phaseBody.querySelector('.phase-complete-banner');
+      if (banner) banner.remove();
+    }
   }
 
   renderHeader(profileKey);
 }
 
 function fireMiniConfetti() {
-  confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+  if (typeof confetti === 'function') {
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+  }
 }
 
 function checkPhaseComplete(phaseKey, profileKey) {
@@ -311,12 +318,14 @@ function checkPhaseComplete(phaseKey, profileKey) {
   }
 
   // Big confetti
-  confetti({
-    particleCount: 150,
-    spread: 100,
-    origin: { y: 0.5 },
-    colors: ['#fbbf24', '#f59e0b', '#0ea5e9', '#a855f7', '#ec4899']
-  });
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.5 },
+      colors: ['#fbbf24', '#f59e0b', '#0ea5e9', '#a855f7', '#ec4899']
+    });
+  }
 
   checkDayComplete(profileKey);
 }
@@ -348,8 +357,10 @@ function checkDayComplete(profileKey) {
   // Mega celebration - dual side cannons for 3 seconds
   const end = Date.now() + 3000;
   const frame = () => {
-    confetti({ particleCount: 20, angle: 60,  spread: 55, origin: { x: 0 } });
-    confetti({ particleCount: 20, angle: 120, spread: 55, origin: { x: 1 } });
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 20, angle: 60,  spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 20, angle: 120, spread: 55, origin: { x: 1 } });
+    }
     if (Date.now() < end) requestAnimationFrame(frame);
   };
   frame();

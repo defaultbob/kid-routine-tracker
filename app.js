@@ -355,6 +355,22 @@ function checkDayComplete(profileKey) {
   frame();
 }
 
+// ── Parent Question Modal ────────────────────────────────────────────────────
+
+let _modalContext = null;
+
+function openQuestionModal(phaseKey, taskId, profileKey) {
+  _modalContext = { phaseKey, taskId, profileKey };
+  const q = PARENT_QUESTIONS[Math.floor(Math.random() * PARENT_QUESTIONS.length)];
+  document.getElementById('modal-question-text').textContent = q;
+  document.getElementById('modal-question').classList.remove('hidden');
+}
+
+function closeQuestionModal() {
+  document.getElementById('modal-question').classList.add('hidden');
+  _modalContext = null;
+}
+
 function bindSplashEvents() {
   document.getElementById('btn-seth').addEventListener('click', () => {
     App.state.activeProfile = 'seth';
@@ -385,6 +401,27 @@ const App = {
   init() {
     this.state = loadState();
     bindSplashEvents();
+
+    document.getElementById('btn-question-complete').addEventListener('click', () => {
+      if (_modalContext) {
+        const { phaseKey, taskId, profileKey } = _modalContext;
+        App.state.profiles[profileKey].currentDayTasks[phaseKey][taskId] = true;
+        saveState(App.state);
+        closeQuestionModal();
+        const chk = document.getElementById('chk-' + phaseKey + '-' + taskId);
+        const row = document.getElementById('task-row-' + phaseKey + '-' + taskId);
+        if (chk) chk.checked = true;
+        if (row) row.classList.add('task-complete');
+        fireMiniConfetti();
+        checkPhaseComplete(phaseKey, profileKey);
+        renderHeader(profileKey);
+      }
+    });
+
+    document.getElementById('modal-question').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeQuestionModal();
+    });
+
     if (this.state.activeProfile) {
       showDashboard(this.state.activeProfile);
     } else {

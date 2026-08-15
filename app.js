@@ -50,20 +50,88 @@ const PHASE_META = {
   beforeBed:    { label: '🌙 Before Bed',    icon: '🌙' }
 };
 
-// ── State helpers (stubs — full implementation in later tasks) ──────────────
+// ── State helpers ───────────────────────────────────────────────────────────
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function freshTaskState() {
+  const out = {};
+  for (const phase of Object.keys(TASKS)) {
+    out[phase] = {};
+    for (const task of TASKS[phase]) {
+      out[phase][task.id] = false;
+    }
+  }
+  return out;
+}
+
+function freshProfile() {
+  return {
+    streak: 0,
+    lifetimeStars: 0,
+    lastActiveDate: todayStr(),
+    history: {},
+    currentDayTasks: freshTaskState()
+  };
+}
+
+function autoReset(profile) {
+  const today = todayStr();
+  if (profile.lastActiveDate === today) return profile;
+
+  const last = new Date(profile.lastActiveDate);
+  const now  = new Date(today);
+  const daysDiff = Math.round((now - last) / 86400000);
+
+  // Save history for the day we're resetting away from
+  profile.history[profile.lastActiveDate] = {
+    beforeSchool: Object.values(profile.currentDayTasks.beforeSchool).every(Boolean),
+    afterSchool:  Object.values(profile.currentDayTasks.afterSchool).every(Boolean),
+    beforeBed:    Object.values(profile.currentDayTasks.beforeBed).every(Boolean)
+  };
+
+  if (daysDiff > 1) {
+    profile.streak = 0; // missed a day
+  }
+  profile.currentDayTasks = freshTaskState();
+  profile.lastActiveDate = today;
+
+  return profile;
+}
 
 function loadState() {
+  let raw;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { /* ignore */ }
-  return { activeProfile: null, profiles: { seth: {}, april: {} } };
+    raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  } catch (_) {
+    raw = null;
+  }
+
+  const defaultState = {
+    activeProfile: null,
+    profiles: {
+      seth:  freshProfile(),
+      april: freshProfile()
+    }
+  };
+
+  if (!raw || !raw.profiles) return defaultState;
+
+  for (const key of ['seth', 'april']) {
+    if (raw.profiles[key]) {
+      raw.profiles[key] = autoReset(raw.profiles[key]);
+    } else {
+      raw.profiles[key] = freshProfile();
+    }
+  }
+
+  return raw;
 }
 
 function saveState(state) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) { /* ignore */ }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 // ── View helpers (stubs) ────────────────────────────────────────────────────
